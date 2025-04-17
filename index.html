@@ -104,42 +104,6 @@
             }
         }
 
-        async function buscarFilmes(titulo) {
-            try {
-                const response = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&s=${titulo}`);
-                const data = await response.json();
-                if (data.Response === 'False') throw new Error('Nenhum filme encontrado');
-
-                const filmesDetalhados = await Promise.all(data.Search.map(async (filme) => {
-                    const detalhes = await fetch(`https://www.omdbapi.com/?apikey=${OMDB_API_KEY}&i=${filme.imdbID}`).then(res => res.json());
-                    return { 
-                        titulo: filme.Title, 
-                        ano: filme.Year, 
-                        diretor: detalhes.Director || 'Desconhecido',
-                        poster: filme.Poster
-                    };
-                }));
-
-                const filmesFiltrados = filmesDetalhados
-                    .filter(filme => parseInt(filme.ano) > 2000)
-                    .map(filme => `
-                        <div class="filme">
-                            <p>${filme.titulo} (${filme.ano}) - Diretor: ${filme.diretor}</p>
-                            ${filme.poster !== 'N/A' ? `<img src="${filme.poster}" alt="${filme.titulo}" style="max-width: 100px; height: auto;">` : ''}
-                        </div>
-                    `).join('');
-
-                resultsDiv.innerHTML += `
-                    <div class="result">
-                        <h3>Filmes após 2000</h3>
-                        ${filmesFiltrados || '<p>Nenhum filme encontrado.</p>'}
-                    </div>
-                `;
-            } catch (error) {
-                resultsDiv.innerHTML += `<div class="result error">Erro na busca de filmes: ${error.message}</div>`;
-            }
-        }
-
         async function buscarClima(cidade) {
             try {
                 const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${WEATHER_API_KEY}&units=metric&lang=pt`);
@@ -158,23 +122,6 @@
                 `;
             } catch (error) {
                 resultsDiv.innerHTML += `<div class="result error">Erro na busca de clima: ${error.message}</div>`;
-            }
-        }
-
-        async function buscarFrases() {
-            try {
-                const promises = Array(5).fill().map(() => 
-                    fetch('https://api.quotable.io/random').then(res => res.json())
-                );
-                const frases = await Promise.all(promises);
-                resultsDiv.innerHTML += `
-                    <div class="result">
-                        <h3>Frases Aleatórias</h3>
-                        ${frases.map(frase => `<p>"${frase.content}" - ${frase.author}</p>`).join('')}
-                    </div>
-                `;
-            } catch (error) {
-                resultsDiv.innerHTML += `<div class="result error">Erro na busca de frases: ${error.message}</div>`;
             }
         }
 
