@@ -18,7 +18,6 @@
             padding: 20px;
             background-color: var(--background-color);
             color: var(--text-color);
-            line-height: 1.6;
         }
 
         .container {
@@ -35,6 +34,34 @@
             color: var(--primary-color);
             border-bottom: 3px solid var(--secondary-color);
             padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+        }
+
+        input, select, button {
+            padding: 10px;
+            width: 100%;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #2980b9;
         }
 
         .result {
@@ -61,74 +88,75 @@
             color: var(--error-color);
             font-weight: bold;
         }
-
-        @media (max-width: 600px) {
-            .container {
-                padding: 15px;
-            }
-        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Projetos de API</h1>
-        <div id="results"></div>
+<div class="container">
+    <h1>Conversor de Moedas Interativo</h1>
+
+    <div class="form-group">
+        <label for="valor">Valor:</label>
+        <input type="number" id="valor" value="100">
     </div>
 
-    <script>
-        const resultsDiv = document.getElementById('results');
-        const EXCHANGE_API_KEY = '749f3b9bf054d993e67bf38a';
-        const OMDB_API_KEY = 'a2e196e4';
-        const WEATHER_API_KEY = 'abe1db0cf26a3f583c78ea608ea8def4';
+    <div class="form-group">
+        <label for="moedaOrigem">Moeda de Origem:</label>
+        <select id="moedaOrigem">
+            <option value="USD">USD</option>
+            <option value="BRL">BRL</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+        </select>
+    </div>
 
-        async function converterMoeda(valor, moedaOrigem, moedaDestino) {
-            try {
-                const response = await fetch(`https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/latest/${moedaOrigem}`);
-                const data = await response.json();
-                if (!data.conversion_rates) throw new Error('Falha ao obter taxas de câmbio');
+    <div class="form-group">
+        <label for="moedaDestino">Moeda de Destino:</label>
+        <select id="moedaDestino">
+            <option value="BRL">BRL</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+        </select>
+    </div>
 
-                const valorConvertido = (valor * data.conversion_rates[moedaDestino]).toFixed(2);
-                const conversoes = ['USD', 'EUR', 'BRL', 'GBP'].map(moeda =>
-                    `${valor} ${moedaOrigem} = ${(valor * data.conversion_rates[moeda]).toFixed(2)} ${moeda}`
-                );
+    <button onclick="executarConversao()">Converter</button>
 
-                resultsDiv.innerHTML += `
-                    <div class="result">
-                        <h3>Conversão de Moeda</h3>
-                        <p>${valor} ${moedaOrigem} = ${valorConvertido} ${moedaDestino}</p>
-                        <p>Outras conversões: ${conversoes.join(' | ')}</p>
-                    </div>
-                `;
-            } catch (error) {
-                resultsDiv.innerHTML += `<div class="result error">Erro na conversão de moeda: ${error.message}</div>`;
-            }
+    <div id="results"></div>
+</div>
+
+<script>
+    const resultsDiv = document.getElementById('results');
+    const EXCHANGE_API_KEY = '749f3b9bf054d993e67bf38a';
+
+    async function converterMoeda(valor, moedaOrigem, moedaDestino) {
+        try {
+            const response = await fetch(`https://v6.exchangerate-api.com/v6/${EXCHANGE_API_KEY}/latest/${moedaOrigem}`);
+            const data = await response.json();
+            if (!data.conversion_rates) throw new Error('Falha ao obter taxas de câmbio');
+
+            const valorConvertido = (valor * data.conversion_rates[moedaDestino]).toFixed(2);
+            const conversoes = ['USD', 'EUR', 'BRL', 'GBP'].map(moeda =>
+                `${valor} ${moedaOrigem} = ${(valor * data.conversion_rates[moeda]).toFixed(2)} ${moeda}`
+            );
+
+            resultsDiv.innerHTML = `
+                <div class="result">
+                    <h3>Conversão de Moeda</h3>
+                    <p>${valor} ${moedaOrigem} = ${valorConvertido} ${moedaDestino}</p>
+                    <p>Outras conversões: ${conversoes.join(' | ')}</p>
+                </div>
+            `;
+        } catch (error) {
+            resultsDiv.innerHTML = `<div class="result error">Erro: ${error.message}</div>`;
         }
+    }
 
-        async function buscarClima(cidade) {
-            try {
-                const response = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=${cidade}&appid=${WEATHER_API_KEY}&units=metric&lang=pt`);
-                const data = await response.json();
-                if (data.cod === '404') throw new Error('Cidade não encontrada');
-
-                const climaExtremo = data.main.temp > 35 || data.main.temp < 5;
-                resultsDiv.innerHTML += `
-                    <div class="result">
-                        <h3>Clima em ${data.name}</h3>
-                        <p>Temperatura: ${data.main.temp}°C</p>
-                        <p>Umidade: ${data.main.humidity}%</p>
-                        <p>Condição: ${data.weather[0].description}</p>
-                        ${climaExtremo ? '<p class="extreme-condition">CONDIÇÃO CLIMÁTICA EXTREMA!</p>' : ''}
-                    </div>
-                `;
-            } catch (error) {
-                resultsDiv.innerHTML += `<div class="result error">Erro na busca de clima: ${error.message}</div>`;
-            }
-        }
-
-        converterMoeda(100, 'USD', 'BRL');
-        buscarFilmes('Batman');
-        buscarClima('São Paulo');
-        buscarFrases();
-    </script>
+    function executarConversao() {
+        const valor = parseFloat(document.getElementById('valor').value);
+        const moedaOrigem = document.getElementById('moedaOrigem').value;
+        const moedaDestino = document.getElementById('moedaDestino').value;
+        converterMoeda(valor, moedaOrigem, moedaDestino);
+    }
+</script>
 </body>
 </html>
